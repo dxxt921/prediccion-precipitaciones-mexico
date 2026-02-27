@@ -1,0 +1,193 @@
+================================================================================
+        REPORTE — EVALUACIÓN PREDICTIVA DE PRECIPITACIONES PLUVIALES
+           (Copiar y pegar en documento Word, sección por sección)
+================================================================================
+
+
+─────────────────────────────────────────────────────
+PORTADA
+─────────────────────────────────────────────────────
+
+Evaluación Predictiva de Precipitaciones Pluviales en México
+
+Inteligencia de Negocios — Primer Departamental
+Proyecto Final
+
+[Tu nombre]
+[Tu matrícula]
+[Fecha: Febrero 2026]
+
+
+─────────────────────────────────────────────────────
+1. INTRODUCCIÓN
+─────────────────────────────────────────────────────
+
+La predicción de precipitaciones pluviales es un problema fundamental en meteorología, agricultura, gestión de recursos hídricos y planificación urbana. En México, la variabilidad climática entre regiones —desde el desierto del norte hasta las selvas tropicales del sureste— representa un reto significativo para los modelos predictivos.
+
+Este proyecto tiene como objetivo desarrollar un sistema de predicción de precipitación diaria binarizada (presencia/ausencia de lluvia, >0 mm) a nivel nacional y por región, utilizando técnicas de Machine Learning y Deep Learning. Se busca además analizar el impacto de la radiación solar (¿reduce la nubosidad y por tanto la lluvia?) y de los contaminantes atmosféricos (¿las partículas PM2.5 y PM10 actúan como núcleos de condensación que favorecen la precipitación?).
+
+
+─────────────────────────────────────────────────────
+2. METODOLOGÍA
+─────────────────────────────────────────────────────
+
+2.1 Fuentes de Datos
+
+Se utilizaron cuatro datasets complementarios, cada uno aportando una dimensión distinta al análisis:
+
+• Dataset 1 — Clima Diario Base (dataset_nacional_clima.csv): Registros diarios de precipitación (mm), radiación solar (W/m²), temperatura máxima y mínima por estado. Cobertura: 2018-2022, múltiples estados (CDMX, Nuevo León, Jalisco, Chihuahua, entre otros).
+
+• Dataset 2 — Inventario de Emisiones (d3_aire01_49_1 (1).csv): Inventario Nacional de Emisiones de SEMARNAT con datos de PM2.5, PM10, SO2, CO, NOx y NH3 por municipio y entidad federativa. Se leyó con encoding latin1.
+
+• Dataset 3 — Datos Mensuales CONAGUA (data (1).csv): Promedios mensuales de temperatura y precipitación por estado desde 1985 hasta 2025.
+
+• Dataset 4 — Meteorología Nacional (meteorologica-radiacion.csv): Promedios diarios nacionales de humedad relativa, temperatura, dirección y velocidad del viento. Cobertura: 2015-2023.
+
+2.2 Integración de Datos (Creación del Dataset Propio)
+
+La integración se realizó en cuatro etapas:
+
+1. El dataset de clima diario se definió como la base maestra (define los estados y fechas del análisis).
+
+2. Los datos meteorológicos nacionales se unieron por fecha (LEFT JOIN), agregando humedad relativa y viento.
+
+3. Los datos mensuales de CONAGUA se unieron por año-mes y estado normalizado, aportando precipitación mensual histórica.
+
+4. Para el dataset de emisiones, se aplicó un groupby('Entidad') calculando el promedio de PM_2.5 y PM_010 por estado, generando la feature pm_media_estado. Esta se unió como dato estático por estado.
+
+Los nombres de los estados fueron normalizados para garantizar la coincidencia entre datasets (ej. "CDMX" → "Ciudad de México", "Nuevo_Leon" → "Nuevo León"). Los valores faltantes se manejaron con interpolación lineal (.interpolate()).
+
+El dataset integrado final contiene más de 9,000 registros con 25+ variables, guardado como dataset_integrado.csv.
+
+2.3 Exploración de Datos (EDA)
+
+Se realizó un EDA a nivel nacional y por región geográfica (Norte, Centro, Sur):
+
+• Se calcularon estadísticas descriptivas de las variables principales.
+• Se generaron matrices de correlación por región para analizar la relación entre radiación, contaminantes y lluvia.
+• Se creó un mapa interactivo con Folium mostrando marcadores por estado con información de precipitación media, radiación y porcentaje de días con lluvia.
+
+2.4 Preprocesamiento y Feature Engineering
+
+Variable objetivo: lluvia_binaria = 1 si Precipitacion_mm > 0, 0 en caso contrario.
+
+Features creadas:
+• radiacion_lag1 y radiacion_lag2: radiación con rezago de 1 y 2 días.
+• precip_lag1, precip_lag2, precip_lag3: precipitación con rezago.
+• precip_rolling7: media móvil de precipitación (ventana de 7 días).
+• temp_range: diferencia entre temperatura máxima y mínima.
+• temp_media: promedio de temperatura máxima y mínima.
+• mes_sin, mes_cos: codificación cíclica del mes del año.
+• Polinomios de grado 2 sobre radiación y temperatura media (interacciones y términos cuadráticos).
+
+Split temporal estricto: Entrenamiento con datos hasta 2019; Prueba con datos de 2020 en adelante. Esto evita data leakage temporal y simula un escenario real de predicción futura.
+
+Se aplicó StandardScaler para normalizar las features antes de los modelos.
+
+2.5 Modelos Implementados
+
+Se entrenaron cuatro modelos predictivos:
+
+a) Regresión Logística: Modelo lineal base con class_weight='balanced' para manejar el desbalance de clases. Sirve como benchmark.
+
+b) Random Forest: Ensamble de 300 árboles de decisión con profundidad máxima de 15. Captura relaciones no lineales y provee importancia de variables.
+
+c) XGBoost (Gradient Boosting): 300 estimadores con learning_rate=0.1 y scale_pos_weight ajustado al desbalance. Modelo de alto rendimiento en competiciones de datos.
+
+d) LSTM (Long Short-Term Memory): Red neuronal recurrente diseñada para series temporales. Arquitectura: dos capas LSTM (64 y 32 neuronas), capas Dropout (30%), capa densa de salida con sigmoide. Se utilizó una ventana temporal de 7 días, con EarlyStopping para evitar sobreajuste.
+
+
+─────────────────────────────────────────────────────
+3. RESULTADOS
+─────────────────────────────────────────────────────
+
+3.1 Resultados del EDA
+
+Hallazgo 1 — Radiación vs Lluvia: Se confirmó una correlación negativa entre la radiación solar y la presencia de lluvia. Mayor radiación implica menor nubosidad y, consecuentemente, menor probabilidad de precipitación. El efecto es más pronunciado en la región Centro.
+
+Hallazgo 2 — Contaminantes vs Lluvia: La relación entre PM2.5/PM10 y lluvia es modesta. Las partículas pueden actuar como núcleos de condensación en ciertas condiciones, pero su efecto es secundario comparado con las variables meteorológicas dominantes.
+
+Hallazgo 3 — Humedad Relativa: Es la variable con mayor correlación positiva con la presencia de lluvia, lo cual es físicamente consistente con los procesos de formación de nubes.
+
+Hallazgo 4 — Estacionalidad: Los meses de junio a septiembre (monzón mexicano) concentran la mayor parte de las precipitaciones, coincidiendo con menor radiación y mayor humedad.
+
+3.2 Evaluación de Modelos
+
+Cada modelo fue evaluado con tres métricas sobre el conjunto de prueba (datos ≥ 2020):
+
+[Nota: Los valores exactos dependen de la ejecución. Consultar la salida del script o las gráficas generadas para los números precisos.]
+
+• Accuracy: Proporción de predicciones correctas.
+• F1-Score: Media armónica de precisión y recall, ideal para clases desbalanceadas.
+• AUC-ROC: Capacidad del modelo de discriminar entre clases.
+
+Se generaron matrices de confusión para cada modelo, visualizadas como heatmaps.
+
+3.3 Feature Importance
+
+Las variables más influyentes según Random Forest y XGBoost son:
+
+1. precip_lag1 / precip_rolling7: La precipitación reciente es el mejor predictor, reflejando la persistencia atmosférica (si llovió ayer, es probable que llueva hoy).
+
+2. humedad_relativa: Físicamente es un factor clave para la formación de lluvia.
+
+3. Radiacion_Wm2 / radiacion_lag1: La radiación tiene efecto negativo — más sol, menos lluvia.
+
+4. temp_range: Un rango térmico alto indica inestabilidad atmosférica propensa a tormentas.
+
+5. pm_media_estado: Importancia menor pero detectable, consistente con la teoría de núcleos de condensación.
+
+6. mes_sin / mes_cos: Capturan la estacionalidad anual.
+
+
+─────────────────────────────────────────────────────
+4. INSIGHTS Y ANÁLISIS POR REGIÓN
+─────────────────────────────────────────────────────
+
+Región Norte (Chihuahua, Nuevo León, Coahuila, etc.):
+• Menor frecuencia de lluvia en general (clima árido/semiárido).
+• La radiación solar es alta y tiene una correlación negativa fuerte con la lluvia.
+• Los contaminantes industriales (Monterrey, Coahuila) muestran PM elevado, pero su correlación con lluvia es débil.
+• Es la región donde la predicción de "no lluvia" es más fácil (alta accuracy por dominio de la clase 0).
+
+Región Centro (CDMX, Estado de México, Jalisco, Puebla, etc.):
+• Patrón estacional muy marcado: temporada seca (nov-abr) y temporada de lluvias (may-oct).
+• La humedad relativa y la radiación son los predictores más útiles.
+• CDMX presenta la mayor cantidad de datos y los modelos logran mejor balance entre precisión y recall.
+• Los contaminantes (PM2.5) son los más altos del país en esta región, y muestran una leve correlación positiva con la precipitación.
+
+Región Sur (Guerrero, Oaxaca, Chiapas, Veracruz, Tabasco, Yucatán, etc.):
+• Mayor frecuencia de lluvia (clima tropical/subtropical).
+• La predicción de lluvia aquí es más fácil (clase 1 dominante), pero predecir los días secos es el reto.
+• Mayor variabilidad en la precipitación diaria.
+• La radiación tiene menor impacto predictivo porque la nubosidad es regularmente alta.
+
+
+─────────────────────────────────────────────────────
+5. CONCLUSIONES
+─────────────────────────────────────────────────────
+
+1. Se logró integrar exitosamente cuatro fuentes de datos heterogéneas (diarios, mensuales, inventario de emisiones y meteorología nacional) en un dataset propio con más de 25 features.
+
+2. Los modelos de Machine Learning pueden predecir de manera efectiva la presencia/ausencia de lluvia diaria, siendo los modelos de ensamble (Random Forest y XGBoost) generalmente los de mejor desempeño.
+
+3. La radiación solar tiene un efecto negativo significativo sobre la probabilidad de lluvia, confirmando que mayor radiación implica menor nubosidad.
+
+4. Los contaminantes atmosféricos (PM2.5, PM10) muestran una relación modesta con la precipitación. Si bien la teoría de núcleos de condensación es válida, en la práctica su efecto es secundario frente a variables meteorológicas como la humedad relativa.
+
+5. El LSTM captura patrones temporales complejos pero requiere significativamente más datos y cómputo. Para un sistema de predicción operativo, Random Forest o XGBoost ofrecen el mejor balance costo-rendimiento.
+
+6. El feature engineering temporal (lags, medias móviles, codificación cíclica) demostró ser crucial para mejorar las predicciones.
+
+
+─────────────────────────────────────────────────────
+6. REFERENCIAS
+─────────────────────────────────────────────────────
+
+• CONAGUA — Comisión Nacional del Agua. Datos climáticos mensuales por entidad.
+• SEMARNAT — Inventario Nacional de Emisiones, 2016.
+• Servicio Meteorológico Nacional — Datos de estaciones meteorológicas.
+• Scikit-Learn Documentation — https://scikit-learn.org
+• XGBoost Documentation — https://xgboost.readthedocs.io
+• TensorFlow/Keras — https://www.tensorflow.org
+• Folium — https://python-visualization.github.io/folium

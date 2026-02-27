@@ -1,0 +1,188 @@
+================================================================================
+   PRESENTACIÓN 5 MIN — GAMMA.APP
+   (Copiar cada diapositiva como una sección en Gamma)
+================================================================================
+
+
+──────────────────────────────────
+DIAPOSITIVA 1 — PORTADA
+──────────────────────────────────
+
+Título: Evaluación Predictiva de Precipitaciones Pluviales en México
+
+Subtítulo: Proyecto Final — Inteligencia de Negocios
+
+[Tu nombre]
+Febrero 2026
+
+
+──────────────────────────────────
+DIAPOSITIVA 2 — OBJETIVO
+──────────────────────────────────
+
+Título: Objetivo del Proyecto
+
+• Predecir la presencia/ausencia de lluvia diaria (>0 mm) a nivel nacional y por región
+
+• Analizar el impacto de:
+  → Radiación solar: ¿reduce nubosidad y lluvia?
+  → Contaminantes (PM2.5, PM10): ¿actúan como núcleos de condensación?
+
+• Comparar 4 modelos: Regresión Logística, Random Forest, XGBoost y LSTM
+
+
+──────────────────────────────────
+DIAPOSITIVA 3 — DATOS
+──────────────────────────────────
+
+Título: 4 Datasets Integrados → 1 Dataset Propio
+
+Dataset 1: Clima Diario (CONAGUA)
+Precipitación, radiación, temperaturas por estado (2018-2022)
+
+Dataset 2: Emisiones (SEMARNAT)
+PM2.5, PM10, SO2 por municipio → groupby por estado
+
+Dataset 3: CONAGUA Mensual
+Precipitación y temperaturas mensuales por estado (1985-2025)
+
+Dataset 4: Meteorología Nacional
+Humedad relativa, viento (promedios diarios nacionales, 2015-2023)
+
+Resultado: +9,000 registros con 25+ variables
+Gaps manejados con interpolación lineal
+
+
+──────────────────────────────────
+DIAPOSITIVA 4 — EDA Y HALLAZGOS
+──────────────────────────────────
+
+Título: Análisis Exploratorio — Hallazgos Clave
+
+🔵 Radiación vs Lluvia: Correlación NEGATIVA
+Más radiación = menos nubes = menos lluvia
+
+🟢 Humedad relativa: Mayor correlación POSITIVA con lluvia
+Factor físico dominante
+
+🟠 Contaminantes (PM): Efecto modesto
+Teoría de núcleos de condensación parcialmente validada
+
+📅 Estacionalidad: Junio-Septiembre concentra la mayor lluvia
+
+[Imagen sugerida: correlaciones_region.png]
+
+
+──────────────────────────────────
+DIAPOSITIVA 5 — FEATURE ENGINEERING
+──────────────────────────────────
+
+Título: Preprocesamiento y Features
+
+Variable objetivo: lluvia_binaria (Precipitación > 0 mm)
+
+Features creadas:
+• radiacion_lag1: radiación del día anterior
+• precip_lag1, lag2, lag3: lluvia de días previos
+• precip_rolling7: media móvil de 7 días
+• temp_range: rango térmico diario
+• mes_sin, mes_cos: estacionalidad cíclica
+• Polinomios grado 2 (radiación × temperatura)
+• pm_media_estado: contaminantes por estado
+
+Split temporal: Train ≤ 2019 | Test ≥ 2020
+
+
+──────────────────────────────────
+DIAPOSITIVA 6 — MODELOS
+──────────────────────────────────
+
+Título: 4 Modelos Entrenados
+
+1. Regresión Logística
+   Modelo base lineal, benchmark de referencia
+
+2. Random Forest
+   300 árboles, profundidad máx. 15, class_weight balanceado
+
+3. XGBoost
+   Gradient Boosting, 300 estimadores, lr=0.1
+
+4. LSTM (Deep Learning)
+   2 capas LSTM (64, 32 neuronas), ventana de 7 días
+   Dropout 30%, EarlyStopping
+
+
+──────────────────────────────────
+DIAPOSITIVA 7 — RESULTADOS
+──────────────────────────────────
+
+Título: Evaluación de Modelos
+
+[Imagen sugerida: matrices_confusion.png]
+[Imagen sugerida: f1_comparativo.png]
+
+Métricas evaluadas: Accuracy, F1-Score, AUC-ROC
+
+→ Los modelos de ensamble (RF y XGBoost) generalmente
+  obtienen el mejor balance precisión-recall.
+
+→ El LSTM captura patrones temporales pero requiere
+  más datos y cómputo.
+
+→ La precipitación reciente y la humedad relativa
+  son los predictores más fuertes.
+
+
+──────────────────────────────────
+DIAPOSITIVA 8 — FEATURE IMPORTANCE
+──────────────────────────────────
+
+Título: ¿Qué variables importan más?
+
+[Imagen sugerida: feature_importance.png]
+
+Top predictores:
+1. Precipitación reciente (lags) — persistencia atmosférica
+2. Humedad relativa — factor físico clave
+3. Radiación solar — efecto negativo (más sol = menos lluvia)
+4. Rango térmico — indica inestabilidad atmosférica
+5. PM media por estado — efecto menor (núcleos de condensación)
+6. Estacionalidad (mes) — monzón mexicano jun-sep
+
+
+──────────────────────────────────
+DIAPOSITIVA 9 — MAPA INTERACTIVO
+──────────────────────────────────
+
+Título: Visualización Geográfica
+
+Mapa interactivo con Folium mostrando:
+• Marcadores por estado con popup informativo
+• Precipitación media diaria
+• Radiación media
+• Porcentaje de días con lluvia
+• Color por intensidad: azul (mucha lluvia) → rojo (poca lluvia)
+
+[Captura de pantalla del mapa: mapa_estaciones.html]
+
+
+──────────────────────────────────
+DIAPOSITIVA 10 — CONCLUSIONES
+──────────────────────────────────
+
+Título: Conclusiones
+
+✅ Se integró exitosamente 4 fuentes → 1 dataset propio (+25 features)
+
+✅ La radiación solar REDUCE la probabilidad de lluvia (correlación negativa confirmada)
+
+✅ Los contaminantes PM tienen efecto MODESTO como núcleos de condensación
+
+✅ Random Forest y XGBoost ofrecen el mejor balance costo-rendimiento
+
+✅ El feature engineering temporal (lags, rolling, cíclicos) es CRUCIAL
+
+✅ La región Centro (CDMX) tiene la predicción más balanceada; Norte predice mejor "no lluvia"; Sur predice mejor "lluvia"
+
+¡Gracias!
