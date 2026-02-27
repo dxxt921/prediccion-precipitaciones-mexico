@@ -1,12 +1,12 @@
-# 🌧️ Evaluación Predictiva de Precipitaciones Pluviales en México
+#  Evaluación Predictiva de Precipitaciones Pluviales en México
 
 Proyecto final de **Inteligencia de Negocios** — Primer Departamental.
 
-## 📋 Descripción
+##  Descripción
 
 Sistema de predicción de precipitación diaria binarizada (>0 mm) a nivel nacional/regional, analizando el impacto de la radiación solar y contaminantes atmosféricos como posibles factores predictivos.
 
-## 📂 Estructura del Proyecto
+##  Estructura del Proyecto
 
 ```
 ├── proyecto_final_precipitaciones.py   # Script principal (completo)
@@ -24,13 +24,13 @@ Sistema de predicción de precipitación diaria binarizada (>0 mm) a nivel nacio
 └── README.md
 ```
 
-## 🔧 Requisitos
+##  Requisitos
 
 ```bash
 pip install pandas scikit-learn xgboost tensorflow folium seaborn matplotlib
 ```
 
-## 🚀 Ejecución
+##  Ejecución
 
 ```bash
 python proyecto_final_precipitaciones.py
@@ -38,7 +38,7 @@ python proyecto_final_precipitaciones.py
 
 El script genera automáticamente el dataset integrado, los gráficos y el mapa.
 
-## 📊 Datasets Utilizados
+##  Datasets Utilizados
 
 | # | Archivo | Fuente | Descripción |
 |---|---------|--------|-------------|
@@ -47,21 +47,21 @@ El script genera automáticamente el dataset integrado, los gráficos y el mapa.
 | 3 | `data (1).csv` | CONAGUA | Datos climáticos mensuales por estado (1985-2025) |
 | 4 | `meteorologica-radiacion.csv` | SMN | Promedios meteorológicos diarios nacionales |
 
-## 🤖 Modelos Implementados
+##  Modelos Implementados
 
 1. **Regresión Logística** — Modelo base lineal
 2. **Random Forest** — Ensamble de árboles (300 estimadores)
 3. **XGBoost** — Gradient Boosting optimizado
 4. **LSTM** — Red neuronal recurrente (ventana temporal de 7 días)
 
-## 📈 Métricas Evaluadas
+##  Métricas Evaluadas
 
 - Accuracy
 - F1-Score
 - AUC-ROC
 - Matrices de Confusión
 
-## 🗺️ Visualizaciones
+##  Visualizaciones
 
 - Mapa interactivo Folium con marcadores por estado
 - Heatmaps de correlación por región (Norte, Centro, Sur)
@@ -69,6 +69,6 @@ El script genera automáticamente el dataset integrado, los gráficos y el mapa.
 - Barras comparativas de F1-Score
 - Historial de entrenamiento LSTM
 
-## 👨‍💻 Autor
+##  Autor
 
-Proyecto desarrollado para la materia de Inteligencia de Negocios.
+Leonardo Fiesco Ramirez de Arellano
